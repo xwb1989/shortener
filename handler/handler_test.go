@@ -2,10 +2,10 @@ package handler
 
 import (
 	"errors"
+	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/xwb1989/shortener/storage"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 )
@@ -13,17 +13,17 @@ import (
 type mockStorage struct{}
 
 func (*mockStorage) Read(s string) (string, error) {
-	if strings.Contains(s, "valid") {
-		return "a_valid_url", nil
+	if strings.Contains(s, "invalid") {
+		return "", storage.InvalidKeyError()
 	}
-	return "", storage.InvalidKeyError()
+	return s, nil
 }
 
 func (*mockStorage) Write(k, v string) error {
-	if strings.Contains(k, "valid") {
-		return nil
-	} else {
+	if strings.Contains(k, "invalid") {
 		return errors.New("unable to write to the storage")
+	} else {
+		return nil
 	}
 }
 
@@ -43,7 +43,7 @@ type mockResponseWriter struct {
 }
 
 func (*mockResponseWriter) Header() http.Header {
-	return nil
+	return http.Header{}
 }
 
 func (w *mockResponseWriter) Write(in []byte) (int, error) {
@@ -59,19 +59,57 @@ func (w *mockResponseWriter) WriteHeader(status int) {
 }
 
 func TestHandler(t *testing.T) {
-	Convey("With mock up storage and encoder...", t, func() {
+	Convey("With router, storage, and encoder...", t, func() {
 		storage := &mockStorage{}
 		encoder := &mockEncoder{}
+		router := httprouter.New()
 		Convey("we can serve incoming encoding request", func() {
-			encode := Encode(storage, encoder)
+			encode := Shorten(storage, encoder)
+			router.POST("/:url", encode)
 
-			request, _ := http.NewRequest(http.MethodPost, "localhost", nil)
-			request.PostForm = url.Values{"url": {"a_valid_string"}}
 			writer := &mockResponseWriter{}
-			encode.ServeHTTP(writer, request)
 
+			request, _ := http.NewRequest(http.MethodPost, "/an_valid_url", nil)
+
+			// serve the request
+			router.ServeHTTP(writer, request)
+
+			// check response
 			So(writer.status, ShouldEqual, http.StatusOK)
 			So(writer.received, ShouldContainSubstring, "encoded")
+
+			Convey("and get error if url is empty", func() {
+				request.URL.Path = "/"
+				router.ServeHTTP(writer, request)
+				So(writer.status, ShouldEqual, http.StatusNotFound)
+			})
+			Convey("and get 500 if unable to write to storage", func() {
+				request.URL.Path = "/an_invalid_url"
+				router.ServeHTTP(writer, request)
+				So(writer.status, ShouldEqual, http.StatusInternalServerError)
+			})
+		})
+		Convey("we can also serve decoding request", func() {
+			decode := Redirect(storage)
+			router.GET("/:url", decode)
+
+			writer := &mockResponseWriter{}
+
+			request, _ := http.NewRequest(http.MethodGet, "/a_valid_url", nil)
+			router.ServeHTTP(writer, request)
+			So(writer.status, ShouldEqual, http.StatusTemporaryRedirect)
+			So(writer.received, ShouldContainSubstring, "href=\"/a_valid_url\"")
+			Convey("and get 400 if key is empty", func() {
+				request.URL.Path = "/"
+				router.ServeHTTP(writer, request)
+				So(writer.status, ShouldEqual, http.StatusNotFound)
+			})
+			Convey("and get 404 if key is invalid", func() {
+				request.URL.Path = "/an_invalid_string"
+				router.ServeHTTP(writer, request)
+				So(writer.status, ShouldEqual, http.StatusNotFound)
+				So(writer.received, ShouldEqual, "invalid short url: an_invalid_string")
+			})
 		})
 	})
 }
