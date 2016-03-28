@@ -27,7 +27,7 @@ func Encode(s storage.Writer, e encoder.Encoder) http.Handler {
 			}
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
-			msg := fmt.Sprintf("invalid url: %s.", url)
+			msg := fmt.Sprintf("invalid url: %s", url)
 			w.Write([]byte(msg))
 		}
 	}
