@@ -12,15 +12,15 @@ import (
 
 type mockStorage struct{}
 
-func (*mockStorage) Read(s string) (string, error) {
-	if strings.Contains(s, "invalid") {
+func (*mockStorage) Read(key int) (string, error) {
+	if key == -1 {
 		return "", storage.InvalidKeyError()
 	}
-	return s, nil
+	return "a_valid_url", nil
 }
 
-func (*mockStorage) Write(k, v string) error {
-	if strings.Contains(k, "invalid") {
+func (*mockStorage) Write(k int, v string) error {
+	if k == -1 {
 		return errors.New("unable to write to the storage")
 	} else {
 		return nil
@@ -29,12 +29,27 @@ func (*mockStorage) Write(k, v string) error {
 
 type mockEncoder struct{}
 
-func (*mockEncoder) Encode(s string) string {
-	return "encoded" + s
+func (*mockEncoder) Encode(s string) int {
+	if strings.Contains(s, "invalid") {
+		return -1
+	} else {
+		return 0
+	}
 }
 
-func (*mockEncoder) Decode(s string) string {
-	return "decoded" + s
+func (*mockEncoder) ToString(i int) string {
+	if i == -1 {
+		return "invalid"
+	} else {
+		return "encoded"
+	}
+}
+
+func (*mockEncoder) FromString(s string) int {
+	if strings.Contains(s, "invalid") {
+		return -1
+	}
+	return 0
 }
 
 type mockResponseWriter struct {
@@ -90,7 +105,7 @@ func TestHandler(t *testing.T) {
 			})
 		})
 		Convey("we can also serve decoding request", func() {
-			decode := Redirect(storage)
+			decode := Redirect(storage, encoder)
 			router.GET("/:url", decode)
 
 			writer := &mockResponseWriter{}
@@ -108,7 +123,7 @@ func TestHandler(t *testing.T) {
 				request.URL.Path = "/an_invalid_string"
 				router.ServeHTTP(writer, request)
 				So(writer.status, ShouldEqual, http.StatusNotFound)
-				So(writer.received, ShouldEqual, "invalid short url: an_invalid_string")
+				So(writer.received, ShouldContainSubstring, "unable to get url for key an_invalid_string")
 			})
 		})
 	})

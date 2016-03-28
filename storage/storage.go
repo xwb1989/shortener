@@ -12,12 +12,12 @@ type Storage interface {
 
 // Reader reads from storage
 type Reader interface {
-	Read(string) (string, error)
+	Read(int) (string, error)
 }
 
 // Writer writes key/value pair into storage
 type Writer interface {
-	Write(string, string) error
+	Write(int, string) error
 }
 
 // InvalidKeyError returned when key not found in the storage
