@@ -18,9 +18,8 @@ func (i *incrementer) KeyToString(key uint64) string {
 	return strconv.FormatUint(key, 36)
 }
 
-func (i *incrementer) StringToKey(key string) uint64 {
-	keyi, _ := strconv.ParseUint(key, 36, 64)
-	return keyi
+func (i *incrementer) StringToKey(key string) (uint64, error) {
+	return strconv.ParseUint(key, 36, 64)
 }
 
 func NewIncrementalEncoder(start uint64) Encoder {

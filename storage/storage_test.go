@@ -17,9 +17,9 @@ func (encoder *mockEncoder) Encode(s string) uint64 {
 	return ret
 }
 
-func (*mockEncoder) StringToKey(s string) uint64 {
+func (*mockEncoder) StringToKey(s string) (uint64, error) {
 	i, _ := strconv.Atoi(s)
-	return uint64(i)
+	return uint64(i), nil
 }
 
 func (*mockEncoder) KeyToString(i uint64) string {

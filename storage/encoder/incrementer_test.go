@@ -14,7 +14,9 @@ func TestIncrementer(t *testing.T) {
 		for i = math.MaxUint64 - 1000; i < math.MaxUint64; i++ {
 			key := encoder.Encode("a")
 			So(encoder.KeyToString(key), ShouldEqual, strconv.FormatUint(key, 36))
-			So(encoder.StringToKey(encoder.KeyToString(key)), ShouldEqual, key)
+			k, err := encoder.StringToKey(encoder.KeyToString(key))
+			So(err, ShouldBeNil)
+			So(k, ShouldEqual, key)
 		}
 	})
 }

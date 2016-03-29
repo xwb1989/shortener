@@ -10,7 +10,11 @@ type memMap struct {
 }
 
 func (m *memMap) Read(key string) (string, error) {
-	if val, ok := m.table[m.encoder.StringToKey(key)]; ok {
+	k, err := m.encoder.StringToKey(key)
+	if err != nil {
+		return "", err
+	}
+	if val, ok := m.table[k]; ok {
 		return val, nil
 	} else {
 		return val, InvalidKeyError(key)

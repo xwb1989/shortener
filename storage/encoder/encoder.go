@@ -8,5 +8,5 @@ type Encoder interface {
 	KeyToString(uint64) string
 
 	// StringToKey converts key string representation to int
-	StringToKey(string) uint64
+	StringToKey(string) (uint64, error)
 }
