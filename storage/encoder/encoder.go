@@ -1,12 +1,12 @@
 package encoder
 
 type Encoder interface {
-	// Encode converts string into base64 number
+	// Encode hash the input string to an integer as key
 	Encode(string) int
 
 	// ToString converts int to its string representation
-	ToString(int) string
+	KeyToString(int) string
 
 	// FromString converts encoded string representation to int
-	FromString(string) int
+	StringToKey(string) int
 }

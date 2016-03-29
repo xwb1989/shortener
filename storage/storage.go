@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 )
 
 // Storage is both reader and writer
@@ -12,15 +13,15 @@ type Storage interface {
 
 // Reader reads from storage
 type Reader interface {
-	Read(int) (string, error)
+	Read(string) (string, error)
 }
 
-// Writer writes key/value pair into storage
+// Writer writes the url into storage, and return its short version
 type Writer interface {
-	Write(int, string) error
+	Write(string) (string, error)
 }
 
 // InvalidKeyError returned when key not found in the storage
-func InvalidKeyError() error {
-	return errors.New("unable to find the value based on the given key")
+func InvalidKeyError(key string) error {
+	return errors.New(fmt.Sprintf("unable to find the value for key: %s", key))
 }

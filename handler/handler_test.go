@@ -2,6 +2,7 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/xwb1989/shortener/storage"
@@ -12,44 +13,19 @@ import (
 
 type mockStorage struct{}
 
-func (*mockStorage) Read(key int) (string, error) {
-	if key == -1 {
-		return "", storage.InvalidKeyError()
+func (*mockStorage) Read(key string) (string, error) {
+	if strings.Contains(key, "invalid") {
+		return "", storage.InvalidKeyError(key)
 	}
 	return "a_valid_url", nil
 }
 
-func (*mockStorage) Write(k int, v string) error {
-	if k == -1 {
-		return errors.New("unable to write to the storage")
+func (*mockStorage) Write(k string) (string, error) {
+	if strings.Contains(k, "invalid") {
+		return "", errors.New("unable to write to the storage")
 	} else {
-		return nil
+		return fmt.Sprintf("shortened-%s", k), nil
 	}
-}
-
-type mockEncoder struct{}
-
-func (*mockEncoder) Encode(s string) int {
-	if strings.Contains(s, "invalid") {
-		return -1
-	} else {
-		return 0
-	}
-}
-
-func (*mockEncoder) ToString(i int) string {
-	if i == -1 {
-		return "invalid"
-	} else {
-		return "encoded"
-	}
-}
-
-func (*mockEncoder) FromString(s string) int {
-	if strings.Contains(s, "invalid") {
-		return -1
-	}
-	return 0
 }
 
 type mockResponseWriter struct {
@@ -76,10 +52,9 @@ func (w *mockResponseWriter) WriteHeader(status int) {
 func TestHandler(t *testing.T) {
 	Convey("With router, storage, and encoder...", t, func() {
 		storage := &mockStorage{}
-		encoder := &mockEncoder{}
 		router := httprouter.New()
 		Convey("we can serve incoming encoding request", func() {
-			encode := Shorten(storage, encoder)
+			encode := Shorten(storage)
 			router.POST("/:url", encode)
 
 			writer := &mockResponseWriter{}
@@ -91,7 +66,7 @@ func TestHandler(t *testing.T) {
 
 			// check response
 			So(writer.status, ShouldEqual, http.StatusOK)
-			So(writer.received, ShouldContainSubstring, "encoded")
+			So(writer.received, ShouldContainSubstring, "shorten")
 
 			Convey("and get error if url is empty", func() {
 				request.URL.Path = "/"
@@ -105,7 +80,7 @@ func TestHandler(t *testing.T) {
 			})
 		})
 		Convey("we can also serve decoding request", func() {
-			decode := Redirect(storage, encoder)
+			decode := Redirect(storage)
 			router.GET("/:url", decode)
 
 			writer := &mockResponseWriter{}
