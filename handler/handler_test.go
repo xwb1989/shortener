@@ -7,6 +7,7 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/xwb1989/shortener/storage"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -55,11 +56,12 @@ func TestHandler(t *testing.T) {
 		router := httprouter.New()
 		Convey("we can serve incoming encoding request", func() {
 			encode := Shorten(storage)
-			router.POST("/:url", encode)
+			router.POST("/encode", encode)
 
 			writer := &mockResponseWriter{}
 
-			request, _ := http.NewRequest(http.MethodPost, "/an_valid_url", nil)
+			request, _ := http.NewRequest(http.MethodPost, "/encode", nil)
+			request.PostForm = url.Values{UrlParamName: {"valid"}}
 
 			// serve the request
 			router.ServeHTTP(writer, request)
@@ -69,12 +71,12 @@ func TestHandler(t *testing.T) {
 			So(writer.received, ShouldContainSubstring, "shorten")
 
 			Convey("and get error if url is empty", func() {
-				request.URL.Path = "/"
+				request.PostForm = nil
 				router.ServeHTTP(writer, request)
-				So(writer.status, ShouldEqual, http.StatusNotFound)
+				So(writer.status, ShouldEqual, http.StatusBadRequest)
 			})
 			Convey("and get 500 if unable to write to storage", func() {
-				request.URL.Path = "/an_invalid_url"
+				request.PostForm = url.Values{UrlParamName: {"invalid"}}
 				router.ServeHTTP(writer, request)
 				So(writer.status, ShouldEqual, http.StatusInternalServerError)
 			})
