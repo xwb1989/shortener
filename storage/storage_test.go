@@ -18,8 +18,7 @@ func (encoder *mockEncoder) Encode(s string) uint64 {
 }
 
 func (*mockEncoder) StringToKey(s string) (uint64, error) {
-	i, _ := strconv.Atoi(s)
-	return uint64(i), nil
+	return strconv.ParseUint(s, 10, 64)
 }
 
 func (*mockEncoder) KeyToString(i uint64) string {
@@ -48,6 +47,12 @@ func TestStorage(t *testing.T) {
 				val, err := s.Read(key)
 				So(val, ShouldBeEmpty)
 				So(err, ShouldResemble, InvalidKeyError(key))
+			})
+
+			Convey("and shall return error if key is invalid", func() {
+				key := "invalidkey"
+				_, err := s.Read(key)
+				So(err, ShouldNotBeNil)
 			})
 		})
 	})
