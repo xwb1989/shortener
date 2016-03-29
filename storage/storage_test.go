@@ -8,22 +8,22 @@ import (
 )
 
 type mockEncoder struct {
-	cnt int
+	cnt uint64
 }
 
-func (encoder *mockEncoder) Encode(s string) int {
+func (encoder *mockEncoder) Encode(s string) uint64 {
 	ret := encoder.cnt
 	encoder.cnt++
 	return ret
 }
 
-func (*mockEncoder) StringToKey(s string) int {
+func (*mockEncoder) StringToKey(s string) uint64 {
 	i, _ := strconv.Atoi(s)
-	return i
+	return uint64(i)
 }
 
-func (*mockEncoder) KeyToString(i int) string {
-	return strconv.Itoa(i)
+func (*mockEncoder) KeyToString(i uint64) string {
+	return strconv.FormatUint(i, 10)
 }
 
 func TestStorage(t *testing.T) {

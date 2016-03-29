@@ -5,7 +5,7 @@ import (
 )
 
 type memMap struct {
-	table   map[int]string
+	table   map[uint64]string
 	encoder encoder.Encoder
 }
 
@@ -24,5 +24,5 @@ func (m *memMap) Write(url string) (string, error) {
 }
 
 func NewMemMap(encoder encoder.Encoder) Storage {
-	return &memMap{table: map[int]string{}, encoder: encoder}
+	return &memMap{table: map[uint64]string{}, encoder: encoder}
 }

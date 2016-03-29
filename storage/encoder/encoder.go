@@ -1,12 +1,12 @@
 package encoder
 
 type Encoder interface {
-	// Encode hash the input string to an integer as key
-	Encode(string) int
+	// Encode hash the input string to uint64 as key
+	Encode(string) uint64
 
 	// KeyToString converts int to its string representation
-	KeyToString(int) string
+	KeyToString(uint64) string
 
 	// StringToKey converts key string representation to int
-	StringToKey(string) int
+	StringToKey(string) uint64
 }
